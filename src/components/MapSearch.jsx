@@ -22,6 +22,7 @@ export default function MapSearch({ reliefWebData, ucdpData }) {
 
     return (
         <div className="w-200 p-4 bg-white shadow-md z-10 h-screen overflow-y-scroll">
+            <Link href="/explore/community-crises" className="absolute bottom-3 left-3 p-3 border-gray-500 border-1 bg-blue-400 text-white rounded-lg hover:bg-blue-500">Explore Community-Submitted Crises</Link>
             <input
                 type="text"
                 value={searchTerm}

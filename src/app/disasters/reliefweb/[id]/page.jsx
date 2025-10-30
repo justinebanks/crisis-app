@@ -1,7 +1,7 @@
 import { getRWDisasterByID, getRWReportsByDisasterID } from "@/actions/reliefweb";
-import DisasterMap from '@/components/DisasterMap';
+import DisasterMap from '@/components/reliefweb/DisasterMap';
 import Link from "next/link";
-import { summarizeWithGemini } from "@/actions/gemini";
+import { summarizeWithGemini, getImagesWithGemini } from "@/actions/gemini";
 
 export default async function ReliefWebDisasterPage({ params }) {
     const { id } = await params;
@@ -16,6 +16,8 @@ export default async function ReliefWebDisasterPage({ params }) {
     const reports = reportsResp?.data || [];
 
     const aiSummary = await summarizeWithGemini(disaster?.description || '', 150);
+    // const aiImages = await getImagesWithGemini(disaster?.description || '', 6);
+    // console.log("AI Images: ", aiImages);
 
     // Try to resolve coordinates from known Response shapes
     let lat = null;
@@ -43,14 +45,25 @@ export default async function ReliefWebDisasterPage({ params }) {
                     </div>
                 </div>
 
+                {/* <div>
+                    <h3 className="text-lg font-semibold mb-2">Gallery</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {aiImages.map((img, index) => (
+                            <div key={index} className="aspect-w-16 aspect-h-9">
+                                <img src={img} alt={`Disaster image ${index + 1}`} className="object-cover rounded-lg shadow-md" />
+                            </div>
+                        ))}
+                    </div>
+                </div> */}
+
                 <div className="grid md:grid-cols-3 gap-6 mt-6">
                     <div className="md:col-span-2">
-                        <div className="bg-white rounded-lg p-6 shadow-lg">
+                        <div className="bg-white rounded-lg p-6 shadow-lg border-1 border-gray-200">
                             <h3 className="text-lg font-semibold mb-2">Overview</h3>
-                            {disaster?.description ? (
-                                <p className="text-gray-800 leading-relaxed">{aiSummary}</p>
+                            {disaster?.description && aiSummary ? (
+                                <p className="text-gray-800 text-sm leading-relaxed">{aiSummary}</p>
                             ) : (
-                                <p className="text-gray-500 italic">No description available.</p>
+                                <p className="text-gray-500 text-sm italic">No description available.</p>
                             )}
 
                             <div className="mt-4 text-sm text-gray-600">
@@ -59,7 +72,71 @@ export default async function ReliefWebDisasterPage({ params }) {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-lg p-6 shadow-lg mt-5">
+                        <div className="bg-white rounded-lg p-6 shadow-lg mt-5 border-1 border-gray-200">
+                            <h3 className="text-lg font-semibold mb-3">Ways to Help</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Make a difference by supporting disaster relief efforts and helping affected communities recover.
+                            </p>
+                            <div className="space-y-3">
+                                <a 
+                                    href="https://google.com" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                                >
+                                    <div>
+                                        <div className="text-sm font-medium text-blue-600">Emergency Relief Donations</div>
+                                        <div className="text-xs text-gray-500">Provide immediate aid for food, water, and shelter</div>
+                                    </div>
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                                <a 
+                                    href="https://google.com" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                                >
+                                    <div>
+                                        <div className="text-sm font-medium text-blue-600">Volunteer for Recovery</div>
+                                        <div className="text-xs text-gray-500">Join local efforts to help rebuild communities</div>
+                                    </div>
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                                <a 
+                                    href="https://google.com" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors"
+                                >
+                                    <div>
+                                        <div className="text-sm font-medium text-blue-600">Support Preparedness Programs</div>
+                                        <div className="text-xs text-gray-500">Fund disaster prevention and early warning systems</div>
+                                    </div>
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+
+                                <Link 
+                                    href={`/submit-volunteer-opportunity?type=reliefweb&id=${id}`}
+                                    className="flex items-center justify-between p-3 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                                >
+                                    <div>
+                                        <div className="text-sm font-medium text-blue-600">Submit Volunteer Opportunity</div>
+                                        <div className="text-xs text-gray-500">Add your organization to help with relief efforts</div>
+                                    </div>
+                                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-6 shadow-lg mt-5 border-1 border-gray-200">
                             <h3 className="text-lg font-semibold mb-3">Reports <span className="text-sm text-gray-500">({reports.length})</span></h3>
                             <div className="grid gap-3">
                                 {reports.length === 0 && <div className="text-gray-500 italic">No reports found for this disaster.</div>}
@@ -84,6 +161,7 @@ export default async function ReliefWebDisasterPage({ params }) {
                                 })}
                             </div>
                         </div>
+
                     </div>
 
                     <div>

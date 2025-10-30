@@ -24,8 +24,10 @@ export async function getImagesWithGemini(disasterDescription, count = 6) {
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: `Provide a list of links to ${count} images on the internet that are related to this disaster: ` + (disasterDescription || "" + ". Return data in JSON array format."),
+        contents: `Search the internet in order to provide a list of links to ${count} images on the internet that are related to this disaster that is occurring in the world right now: ` + (disasterDescription || "" + ". Return data in JSON array format. Remember that I need direct image URLs only and that the information you need requires you to do a web search to find the most relevant images. Even if the data is from a later date than the current date, you must find a way to get it for me."),
     })
+
+    return response.text;
 }
 
 // Suggestions for ways to help with disaster relief
