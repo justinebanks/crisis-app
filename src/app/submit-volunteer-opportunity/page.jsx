@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SubmitVolunteerOpportunityPage() {
+function SubmitVolunteerOpportunityContent() {
     const searchParams = useSearchParams();
     const type = searchParams.get('type'); // 'reliefweb' or 'ucdp'
     const id = searchParams.get('id'); // disaster/conflict ID
@@ -324,5 +324,13 @@ export default function SubmitVolunteerOpportunityPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SubmitVolunteerOpportunityPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 py-12 px-4 text-gray-500">Loading...</div>}>
+            <SubmitVolunteerOpportunityContent />
+        </Suspense>
     );
 }

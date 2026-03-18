@@ -19,11 +19,11 @@ export default async function UCDPDisasterPage({ params }) {
     let eventsResp = null;
     try {
         if (dyadIds) {
-            eventsResp = await getUCDPEvents("25.0.9", { Dyad: dyadIds, pagesize: 1000 });
+            eventsResp = await getUCDPEvents(process.env.UCDP_DATASET_VERSION, { Dyad: dyadIds, pagesize: 1000 });
         } else {
             // fallback: fetch events by conflict name
             const name = conflictData?.Name || conflictData?.name || '';
-            eventsResp = await getUCDPEvents("25.0.9", { q: name, pagesize: 1000 });
+            eventsResp = await getUCDPEvents(process.env.UCDP_DATASET_VERSION, { q: name, pagesize: 1000 });
         }
     } catch (err) {
         console.error('Error fetching UCDP events', err);

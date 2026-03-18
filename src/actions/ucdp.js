@@ -1,5 +1,8 @@
 "use server";
 
+const DEFAULT_UCDP_DATASET_VERSION = process.env.UCDP_DATASET_VERSION || "25.0.9";
+const DEFAULT_UCDP_START_DATE = process.env.UCDP_START_DATE || "2025-09-01";
+
 const getUCDPHeaders = () => {
     if (!process.env.UCDP_ACCESS_TOKEN) {
         throw new Error("Missing UCDP_ACCESS_TOKEN environment variable");
@@ -45,53 +48,74 @@ const formatUCDPEvent = event => ({
 
 
 export async function getUCDPEvents(datasetVersion, parameters = {}) {
+    const resolvedDatasetVersion = datasetVersion || DEFAULT_UCDP_DATASET_VERSION;
+
+    if (!resolvedDatasetVersion) {
+        throw new Error("Missing UCDP dataset version. Set UCDP_DATASET_VERSION or pass datasetVersion.");
+    }
+
     const params = new URLSearchParams({
         pagesize: 1000,
         page: 0,
         ...parameters
     });
 
-    try {
-        const response = await fetch(`https://ucdpapi.pcr.uu.se/api/gedevents/${datasetVersion}?${params.toString()}`, {
-            method: "GET",
-            headers: getUCDPHeaders(),
-        });
-        const result = await response.json();
+    const response = await fetch(`https://ucdpapi.pcr.uu.se/api/gedevents/${resolvedDatasetVersion}?${params.toString()}`, {
+        method: "GET",
+        headers: getUCDPHeaders(),
+    });
 
-        if (result.Message) {
-            throw new Error(result.Message);
-        }
+    const result = await response.json();
 
-        return {
-            totalEvents: result["TotalCount"],
-            totalPages: result["TotalPages"],
-            events: result["Result"].map(event => formatUCDPEvent(event))
-        };
-    } catch (error) {
-        console.error(error);
+    if (!response.ok) {
+        const message = result?.Message || `UCDP request failed with status ${response.status}`;
+        throw new Error(message);
+    }
+
+    if (result?.Message) {
+        throw new Error(result.Message);
+    }
+
+    const totalEvents = Number(result?.TotalCount ?? 0);
+    const totalPages = Number(result?.TotalPages ?? 0);
+    const events = Array.isArray(result?.Result) ? result.Result.map(event => formatUCDPEvent(event)) : [];
+
+    return {
+        totalEvents,
+        totalPages,
+        events,
     };
 }
 
 
 export async function getAllUCDPEvents(datasetVersion, parameters = {}) {
-    let allEvents = [];
+    const resolvedDatasetVersion = datasetVersion || DEFAULT_UCDP_DATASET_VERSION;
+    const mergedParameters = {
+        StartDate: DEFAULT_UCDP_START_DATE,
+        ...parameters,
+    };
 
     console.log("Fetching all UCDP events...");
 
-    const firstRequest = await getUCDPEvents(datasetVersion, {page: 0, pagesize: 1, ...parameters });
+    const firstRequest = await getUCDPEvents(resolvedDatasetVersion, { page: 0, pagesize: 1, ...mergedParameters });
+
+    if (!firstRequest || typeof firstRequest.totalEvents !== "number") {
+        throw new Error("Unable to fetch initial UCDP page metadata.");
+    }
+
     const totalEvents = firstRequest.totalEvents;
     const totalPages = Math.ceil(totalEvents / 1000);
     
     console.log(`Total Events: ${totalEvents}, Total Pages: ${totalPages}`);
 
     const allPromises = Array.from({ length: totalPages }, (_, i) => i).map(async (page) => {
-        const pagedParameters = { ...parameters, page, pagesize: 1000 };
+        const pagedParameters = { ...mergedParameters, page, pagesize: 1000 };
         console.log("Fetching UCDP Page ", page);
-        return getUCDPEvents(datasetVersion, pagedParameters);
+        return getUCDPEvents(resolvedDatasetVersion, pagedParameters);
     });
 
     const allPageResults = await Promise.all(allPromises);
-    allEvents = allPageResults.map(result => result.events).flat();
+    const allEvents = allPageResults.flatMap(result => result.events || []);
 
     return {
         totalEvents: allEvents.length,
@@ -100,31 +124,30 @@ export async function getAllUCDPEvents(datasetVersion, parameters = {}) {
 }
 
 export async function getUCDPConflict(conflictId) {
-    try {
-        const response = await fetch(`https://ucdp.uu.se/api/conflict/${conflictId}`, {
-            method: "GET",
-            headers: getUCDPHeaders(),
-        });
-        const result = await response.json();
-        return result;
+    const response = await fetch(`https://ucdp.uu.se/api/conflict/${conflictId}`, {
+        method: "GET",
+        headers: getUCDPHeaders(),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch UCDP conflict ${conflictId} (${response.status})`);
     }
-    catch (error) {
-        console.error(error);
-    }
+
+    return response.json();
 }
 
 
 export async function getUCDPActor(conflictId) {
-    try {
-        const response = await fetch(`https://ucdp.uu.se/api/actor/${conflictId}`, {
-            method: "GET",
-            headers: getUCDPHeaders(),
-        });
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error(error);
+    const response = await fetch(`https://ucdp.uu.se/api/actor/${conflictId}`, {
+        method: "GET",
+        headers: getUCDPHeaders(),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch UCDP actor ${conflictId} (${response.status})`);
     }
+
+    return response.json();
 }
 
 export async function getArmedConflicts(events) {

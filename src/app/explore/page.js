@@ -28,12 +28,14 @@ export default function Explore() {
 	};
 
 	const fetchUCDPDisasters = async () => {
-		const data = await getAllUCDPEvents("25.0.9", { 
-			"StartDate": "2025-09-01",
-		});
-
-		console.log("UCDP Data: ", data);
-		setUcdpData(data.events);
+		try {
+			const data = await getAllUCDPEvents();
+			console.log("UCDP Data: ", data);
+			setUcdpData(data.events || []);
+		} catch (error) {
+			console.error("Failed to fetch UCDP events:", error);
+			setUcdpData([]);
+		}
 	};
 
 	useEffect(() => {
