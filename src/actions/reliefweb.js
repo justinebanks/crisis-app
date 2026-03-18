@@ -1,20 +1,23 @@
 "use server";
 
-import puppeteer from 'puppeteer';
-
 const APP_NAME = "OrgCongressionalApp4953";
 
-async function fetchWithPuppeteer(url) {
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+async function fetchReliefWebJson(url) {
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            Accept: "application/json",
+            "User-Agent": "crisis-app/1.0",
+        },
+        cache: "no-store",
+    });
 
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`ReliefWeb request failed (${response.status}): ${errorBody.slice(0, 200)}`);
+    }
 
-    const rawJsonText = await page.evaluate(() => document.querySelector('body').innerText);
-    const jsonData = JSON.parse(rawJsonText);
-
-    await browser.close();
-    return jsonData;
+    return response.json();
 }
 
 
@@ -27,7 +30,7 @@ export async function getRWDisasters(parameters) {
 
     console.log("Params: ", params.toString());
 
-    const response = await fetchWithPuppeteer(`https://api.reliefweb.int/v2/disasters?${params.toString()}`);
+    const response = await fetchReliefWebJson(`https://api.reliefweb.int/v2/disasters?${params.toString()}`);
     return response;
 }
 
@@ -36,7 +39,7 @@ export async function getRWDisasterByID(disasterID) {
         "appname": APP_NAME
     });
 
-    const response = await fetchWithPuppeteer(`https://api.reliefweb.int/v2/disasters/${disasterID}?${params.toString()}`);
+    const response = await fetchReliefWebJson(`https://api.reliefweb.int/v2/disasters/${disasterID}?${params.toString()}`);
     return response;
 }
 
@@ -47,6 +50,6 @@ export async function getRWReportsByDisasterID(disasterID) {
         "filter[value]": disasterID,
     });
 
-    const response = await fetchWithPuppeteer(`https://api.reliefweb.int/v2/reports?${params.toString()}`);
+    const response = await fetchReliefWebJson(`https://api.reliefweb.int/v2/reports?${params.toString()}`);
     return response;
 }

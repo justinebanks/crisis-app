@@ -1,5 +1,15 @@
 "use server";
 
+const getUCDPHeaders = () => {
+    if (!process.env.UCDP_ACCESS_TOKEN) {
+        throw new Error("Missing UCDP_ACCESS_TOKEN environment variable");
+    }
+
+    return {
+        "x-ucdp-access-token": process.env.UCDP_ACCESS_TOKEN,
+    };
+};
+
 const formatUCDPEvent = event => ({
     id: event.id,
     conflict_name: event.conflict_name,
@@ -42,7 +52,10 @@ export async function getUCDPEvents(datasetVersion, parameters = {}) {
     });
 
     try {
-        const response = await fetch(`https://ucdpapi.pcr.uu.se/api/gedevents/${datasetVersion}?${params.toString()}`, { method: "GET" });
+        const response = await fetch(`https://ucdpapi.pcr.uu.se/api/gedevents/${datasetVersion}?${params.toString()}`, {
+            method: "GET",
+            headers: getUCDPHeaders(),
+        });
         const result = await response.json();
 
         if (result.Message) {
@@ -88,7 +101,10 @@ export async function getAllUCDPEvents(datasetVersion, parameters = {}) {
 
 export async function getUCDPConflict(conflictId) {
     try {
-        const response = await fetch(`https://ucdp.uu.se/api/conflict/${conflictId}`, { method: "GET" });
+        const response = await fetch(`https://ucdp.uu.se/api/conflict/${conflictId}`, {
+            method: "GET",
+            headers: getUCDPHeaders(),
+        });
         const result = await response.json();
         return result;
     }
@@ -100,7 +116,10 @@ export async function getUCDPConflict(conflictId) {
 
 export async function getUCDPActor(conflictId) {
     try {
-        const response = await fetch(`https://ucdp.uu.se/api/actor/${conflictId}`, { method: "GET" });
+        const response = await fetch(`https://ucdp.uu.se/api/actor/${conflictId}`, {
+            method: "GET",
+            headers: getUCDPHeaders(),
+        });
         const result = await response.json();
         return result;
     } catch (error) {
